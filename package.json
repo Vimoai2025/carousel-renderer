@@ -1,0 +1,14 @@
+{
+  "name": "carousel-renderer",
+  "version": "1.0.0",
+  "dependencies": {
+    "satori": "^0.10.0",
+    "@resvg/resvg-js": "^2.6.0",
+    "node-fetch": "^3.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@vercel/node": "^3.0.0",
+    "typescript": "^5.0.0"
+  }
+}
