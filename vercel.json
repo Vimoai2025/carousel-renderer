@@ -4,11 +4,10 @@
       "src": "api/render-slide.ts",
       "use": "@vercel/node",
       "config": {
-        // Recursos movidos del bloque 'functions'
+    
         "memory": 1024, 
         "maxDuration": 30,
-        
-        // Inclusión de archivos necesaria para las fuentes (Satori)
+   
         "includeFiles": "fonts/**"
       }
     }
