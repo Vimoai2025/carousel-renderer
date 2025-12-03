@@ -42,12 +42,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (body.asset_url) {
       try {
         const response = await fetch(body.asset_url);
-        if (response.ok) {
+        
+        // 🛑 CORRECCIÓN CLAVE: Verificar response.ok
+        if (response.ok) { // Si el fetch es exitoso (código 200)
           assetImageData = Buffer.from(await response.arrayBuffer());
+        } else {
+          // Si el fetch falla (403, 404, 500), loguea y establece assetImageData a null
+          console.warn(`Failed to fetch asset image (Status: ${response.status})`); 
         }
       } catch (e) {
-        console.warn('Failed to fetch asset image:', e);
-        // Continuar sin asset
+        console.error('Network fetch error:', e);
+        // Si hay un error de red (DNS, timeout), continúa sin el asset
       }
     }
 
