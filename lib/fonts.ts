@@ -24,7 +24,7 @@ export async function loadFonts(fontFamily: string): Promise<SatoriFont[]> {
     
     for (const fontFile of fontFiles) {
       try {
-        const fontPath = join(process.cwd(), 'fonts', fontFile.file);
+        const fontPath = join(__dirname, '..', 'fonts', fontFile.file);
         const fontData = readFileSync(fontPath);
         
         fonts.push({
