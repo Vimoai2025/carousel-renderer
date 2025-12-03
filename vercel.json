@@ -4,5 +4,15 @@
       "memory": 1024,
       "maxDuration": 30
     }
-  }
+  },
+  "builds": [
+    {
+      "src": "api/render-slide.ts",
+      "use": "@vercel/node",
+      "config": {
+        // Esto le dice a Vercel: "Incluye todos los archivos en /fonts en el bundle de la función"
+        "includeFiles": "fonts/**" 
+      }
+    }
+  ]
 }
