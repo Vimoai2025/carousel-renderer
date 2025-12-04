@@ -3,7 +3,7 @@ import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { generateSlideJSX } from '../lib/templates';
+import { generateSlideJSX } from '../lib/templates.js';
 import { loadFonts } from '../lib/fonts';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
