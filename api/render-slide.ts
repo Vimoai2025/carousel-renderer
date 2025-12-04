@@ -1,10 +1,82 @@
+// /api/render-slide.ts
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { generateSlideJSX } from '../lib/templates.js';
-import { loadFonts } from '../lib/fonts';
+import { generateSlideJSX } from '../lib/templates';
+
+interface RenderSlideRequest {
+  slide_number: number;
+  total_slides: number;
+  slide_type: 'cover' | 'content' | 'cta';
+  title: string;
+  subtitle?: string;
+  body_text?: string;
+  emoji?: string;
+  brand: {
+    name: string;
+    color_primary: string;
+    color_secondary: string;
+    font_family: string;
+  };
+  template: string;
+  asset_url?: string | null;
+  use_asset_as?: 'featured' | 'background' | null;
+  output?: {
+    width: number;
+    height: number;
+    format: string;
+  };
+}
+
+interface SatoriFont {
+  name: string;
+  data: Buffer;
+  weight: number;
+  style: 'normal' | 'italic';
+}
+
+// Font loading function
+async function loadFonts(fontFamily: string): Promise<SatoriFont[]> {
+  const fonts: SatoriFont[] = [];
+  
+  const fontMap: Record<string, { file: string; weight: number }[]> = {
+    'Inter': [
+      { file: 'Inter-Regular.ttf', weight: 400 },
+      { file: 'Inter-Bold.ttf', weight: 700 },
+    ],
+    'Roboto': [
+      { file: 'Roboto-Regular.ttf', weight: 400 },
+      { file: 'Roboto-Bold.ttf', weight: 700 },
+    ],
+  };
+  
+  const fontFiles = fontMap[fontFamily] || fontMap['Inter'];
+  
+  for (const fontFile of fontFiles) {
+    try {
+      const fontPath = join(process.cwd(), 'fonts', fontFile.file);
+      const fontData = readFileSync(fontPath);
+      
+      fonts.push({
+        name: fontFamily,
+        data: fontData,
+        weight: fontFile.weight,
+        style: 'normal',
+      });
+    } catch (e) {
+      console.warn(`Failed to load font ${fontFile.file}:`, e);
+    }
+  }
+  
+  // Fallback: if no fonts loaded and not already trying Inter, try Inter
+  if (fonts.length === 0 && fontFamily !== 'Inter') {
+    return loadFonts('Inter');
+  }
+  
+  return fonts;
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS headers
@@ -25,7 +97,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const body = req.body as RenderSlideRequest;
 
-    // Validar request
+    // Validate request
     if (!body.slide_number || !body.slide_type || !body.title || !body.brand) {
       return res.status(400).json({
         success: false,
@@ -34,53 +106,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Cargar fuentes
-    const fonts = await loadFonts(body.brand.font_family);
+    // Load fonts
+    const fonts = await loadFonts(body.brand.font_family || 'Inter');
 
-    // Fetch asset image si existe
-    let assetImageData: Buffer | null = null;
+    // Fetch asset image if exists
+    let assetImageData: string | null = null;
     if (body.asset_url) {
       try {
         const response = await fetch(body.asset_url);
-        
-        // 🛑 CORRECCIÓN CLAVE: Verificar response.ok
-        if (response.ok) { // Si el fetch es exitoso (código 200)
-          assetImageData = Buffer.from(await response.arrayBuffer());
-        } else {
-          // Si el fetch falla (403, 404, 500), loguea y establece assetImageData a null
-          console.warn(`Failed to fetch asset image (Status: ${response.status})`); 
+        if (response.ok) {
+          const buffer = Buffer.from(await response.arrayBuffer());
+          assetImageData = `data:image/png;base64,${buffer.toString('base64')}`;
         }
       } catch (e) {
-        console.error('Network fetch error:', e);
-        // Si hay un error de red (DNS, timeout), continúa sin el asset
+        console.warn('Failed to fetch asset image:', e);
+        // Continue without asset
       }
     }
 
-    // Generar JSX del slide
-    const slideJSX = generateSlideJSX({
+    // Generate slide structure
+    const slideStructure = generateSlideJSX({
       ...body,
-      assetImageData: assetImageData ? `data:image/png;base64,${assetImageData.toString('base64')}` : null
+      assetImageData: assetImageData,
     });
 
-    // Renderizar a SVG con Satori
-    const svg = await satori(slideJSX, {
-      width: body.output?.width || 1080,
-      height: body.output?.height || 1350,
+    const width = body.output?.width || 1080;
+    const height = body.output?.height || 1350;
+
+    // Render to SVG with Satori
+    const svg = await satori(slideStructure as any, {
+      width: width,
+      height: height,
       fonts: fonts,
     });
 
-    // Convertir SVG a PNG con Resvg
+    // Convert SVG to PNG with Resvg
     const resvg = new Resvg(svg, {
       fitTo: {
         mode: 'width',
-        value: body.output?.width || 1080,
+        value: width,
       },
     });
 
     const pngData = resvg.render();
     const pngBuffer = pngData.asPng();
 
-    // Convertir a base64
+    // Convert to base64
     const imageBase64 = pngBuffer.toString('base64');
 
     const renderTime = Date.now() - startTime;
@@ -89,8 +160,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       success: true,
       image_base64: imageBase64,
       dimensions: {
-        width: body.output?.width || 1080,
-        height: body.output?.height || 1350,
+        width: width,
+        height: height,
       },
       render_time_ms: renderTime,
     });
