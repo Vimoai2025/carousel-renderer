@@ -1,5 +1,5 @@
 // /api/render-slide.ts
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+//import type { VercelRequest, VercelResponse } from '@vercel/node';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import { readFileSync } from 'fs';
