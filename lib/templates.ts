@@ -1,4 +1,5 @@
-import React from 'react';
+// /lib/templates.ts
+// Versión sin JSX - usa objetos directamente para Satori
 
 interface SlideProps {
   slide_number: number;
@@ -19,77 +20,168 @@ interface SlideProps {
   use_asset_as?: 'featured' | 'background' | null;
 }
 
-export function generateSlideJSX(props: SlideProps): React.ReactElement {
-  const styles = getTemplateStyles(props.template, props.brand);
-  
-  return (
-    <div style={styles.container}>
-      {/* Background */}
-      {props.use_asset_as === 'background' && props.assetImageData && (
-        <img
-          src={props.assetImageData}
-          style={styles.backgroundImage}
-        />
-      )}
-      
-      {/* Overlay for readability if background image */}
-      {props.use_asset_as === 'background' && props.assetImageData && (
-        <div style={styles.overlay} />
-      )}
-      
-      {/* Content wrapper */}
-      <div style={styles.contentWrapper}>
-        {/* Slide number indicator (for content slides) */}
-        {props.slide_type === 'content' && (
-          <span style={styles.slideNumber}>
-            {props.slide_number}/{props.total_slides}
-          </span>
-        )}
-        
-        {/* Featured asset (centered) */}
-        {props.use_asset_as === 'featured' && props.assetImageData && (
-          <img
-            src={props.assetImageData}
-            style={styles.featuredAsset}
-          />
-        )}
-        
-        {/* Emoji */}
-        {props.emoji && !props.assetImageData && (
-          <span style={styles.emoji}>{props.emoji}</span>
-        )}
-        
-        {/* Title */}
-        <h1 style={props.slide_type === 'cover' ? styles.titleLarge : styles.titleMedium}>
-          {props.title}
-        </h1>
-        
-        {/* Subtitle */}
-        {props.subtitle && (
-          <p style={styles.subtitle}>{props.subtitle}</p>
-        )}
-        
-        {/* Body text */}
-        {props.body_text && (
-          <p style={styles.bodyText}>{props.body_text}</p>
-        )}
-        
-        {/* Swipe indicator (cover only) */}
-        {props.slide_type === 'cover' && (
-          <span style={styles.swipeIndicator}>Desliza →</span>
-        )}
-        
-        {/* CTA arrow (cta only) */}
-        {props.slide_type === 'cta' && (
-          <span style={styles.ctaArrow}>👆</span>
-        )}
-      </div>
-    </div>
-  );
+// Satori acepta objetos con esta estructura
+interface SatoriNode {
+  type: string;
+  props: {
+    style?: React.CSSProperties;
+    children?: (SatoriNode | string)[] | SatoriNode | string;
+    src?: string;
+    [key: string]: any;
+  };
 }
 
-function getTemplateStyles(template: string, brand: { color_primary: string; color_secondary: string; font_family: string }) {
-  const baseStyles: Record<string, React.CSSProperties> = {
+export function generateSlideJSX(props: SlideProps): SatoriNode {
+  const styles = getTemplateStyles(props.template, props.brand);
+  
+  const children: (SatoriNode | string)[] = [];
+  
+  // Background image (if using as background)
+  if (props.use_asset_as === 'background' && props.assetImageData) {
+    children.push({
+      type: 'img',
+      props: {
+        src: props.assetImageData,
+        style: styles.backgroundImage,
+      }
+    });
+    
+    // Overlay for readability
+    children.push({
+      type: 'div',
+      props: {
+        style: styles.overlay,
+        children: [],
+      }
+    });
+  }
+  
+  // Content wrapper children
+  const contentChildren: (SatoriNode | string)[] = [];
+  
+  // Slide number (for content slides)
+  if (props.slide_type === 'content') {
+    contentChildren.push({
+      type: 'span',
+      props: {
+        style: styles.slideNumber,
+        children: `${props.slide_number}/${props.total_slides}`,
+      }
+    });
+  }
+  
+  // Featured asset (centered)
+  if (props.use_asset_as === 'featured' && props.assetImageData) {
+    contentChildren.push({
+      type: 'img',
+      props: {
+        src: props.assetImageData,
+        style: styles.featuredAsset,
+      }
+    });
+  }
+  
+  // Emoji (if no asset)
+  if (props.emoji && !props.assetImageData) {
+    contentChildren.push({
+      type: 'span',
+      props: {
+        style: styles.emoji,
+        children: props.emoji,
+      }
+    });
+  }
+  
+  // Title
+  contentChildren.push({
+    type: 'h1',
+    props: {
+      style: props.slide_type === 'cover' ? styles.titleLarge : styles.titleMedium,
+      children: props.title,
+    }
+  });
+  
+  // Subtitle
+  if (props.subtitle) {
+    contentChildren.push({
+      type: 'p',
+      props: {
+        style: styles.subtitle,
+        children: props.subtitle,
+      }
+    });
+  }
+  
+  // Body text
+  if (props.body_text) {
+    contentChildren.push({
+      type: 'p',
+      props: {
+        style: styles.bodyText,
+        children: props.body_text,
+      }
+    });
+  }
+  
+  // Swipe indicator (cover only)
+  if (props.slide_type === 'cover') {
+    contentChildren.push({
+      type: 'span',
+      props: {
+        style: styles.swipeIndicator,
+        children: 'Desliza →',
+      }
+    });
+  }
+  
+  // CTA arrow (cta only)
+  if (props.slide_type === 'cta') {
+    contentChildren.push({
+      type: 'span',
+      props: {
+        style: styles.ctaArrow,
+        children: '👆',
+      }
+    });
+  }
+  
+  // Content wrapper
+  children.push({
+    type: 'div',
+    props: {
+      style: styles.contentWrapper,
+      children: contentChildren,
+    }
+  });
+  
+  // Main container
+  return {
+    type: 'div',
+    props: {
+      style: styles.container,
+      children: children,
+    }
+  };
+}
+
+interface StyleSet {
+  container: React.CSSProperties;
+  contentWrapper: React.CSSProperties;
+  backgroundImage: React.CSSProperties;
+  overlay: React.CSSProperties;
+  featuredAsset: React.CSSProperties;
+  titleLarge: React.CSSProperties;
+  titleMedium: React.CSSProperties;
+  subtitle: React.CSSProperties;
+  bodyText: React.CSSProperties;
+  emoji: React.CSSProperties;
+  slideNumber: React.CSSProperties;
+  swipeIndicator: React.CSSProperties;
+  ctaArrow: React.CSSProperties;
+}
+
+function getTemplateStyles(template: string, brand: { color_primary: string; color_secondary: string; font_family: string }): StyleSet {
+  const baseStyles: StyleSet = {
     container: {
       width: '1080px',
       height: '1350px',
@@ -205,6 +297,7 @@ function getTemplateStyles(template: string, brand: { color_primary: string; col
         bodyText: { ...baseStyles.bodyText, color: '#FFFFFF' },
         slideNumber: { ...baseStyles.slideNumber, color: '#FFFFFF' },
         swipeIndicator: { ...baseStyles.swipeIndicator, color: '#FFFFFF' },
+        ctaArrow: { ...baseStyles.ctaArrow, color: '#FFFFFF' },
       };
 
     case 'minimal_clean':
@@ -220,6 +313,7 @@ function getTemplateStyles(template: string, brand: { color_primary: string; col
         bodyText: { ...baseStyles.bodyText, color: '#6B7280' },
         slideNumber: { ...baseStyles.slideNumber, color: brand.color_secondary },
         swipeIndicator: { ...baseStyles.swipeIndicator, color: brand.color_primary },
+        ctaArrow: { ...baseStyles.ctaArrow, color: brand.color_primary },
       };
 
     case 'bold_contrast':
@@ -235,6 +329,7 @@ function getTemplateStyles(template: string, brand: { color_primary: string; col
         bodyText: { ...baseStyles.bodyText, color: '#FFFFFF' },
         slideNumber: { ...baseStyles.slideNumber, color: brand.color_secondary },
         swipeIndicator: { ...baseStyles.swipeIndicator, color: '#FFFFFF' },
+        ctaArrow: { ...baseStyles.ctaArrow, color: '#FFFFFF' },
       };
 
     case 'soft_pastel':
@@ -252,6 +347,7 @@ function getTemplateStyles(template: string, brand: { color_primary: string; col
         bodyText: { ...baseStyles.bodyText, color: adjustColorLightness(brand.color_primary, 0.35) },
         slideNumber: { ...baseStyles.slideNumber, color: brand.color_primary },
         swipeIndicator: { ...baseStyles.swipeIndicator, color: darkText },
+        ctaArrow: { ...baseStyles.ctaArrow, color: darkText },
       };
 
     default:
