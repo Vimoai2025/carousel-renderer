@@ -1,5 +1,6 @@
 {
   "name": "carousel-renderer",
+  "type": "module",
   "version": "1.0.0",
   "dependencies": {
     "satori": "^0.10.0",
