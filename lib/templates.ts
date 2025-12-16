@@ -135,8 +135,8 @@ export function generateSlideJSX(props: SlideProps): SatoriNode {
     });
   }
   
-  // CTA arrow (cta only)
-  if (props.slide_type === 'cta') {
+  // CTA arrow (cta only) - Solo mostrar si NO hay logo
+  if (props.slide_type === 'cta' && !props.brand.logo_url) {
     contentChildren.push({
       type: 'span',
       props: {
@@ -293,12 +293,12 @@ function getTemplateStyles(template: string, brand: { color_primary: string; col
       fontSize: '80px',
       marginTop: '30px',
     },
-    brandLogo: {
-      width: '140px',
-      height: '140px',
+        brandLogo: {
+      width: '300px',
+      height: '300px',
       objectFit: 'contain',
-      marginTop: '40px',
-      opacity: 0.95,
+      marginTop: '50px',
+      opacity: 1,
     },
   };
 
