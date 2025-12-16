@@ -14,6 +14,7 @@ interface SlideProps {
     color_primary: string;
     color_secondary: string;
     font_family: string;
+    logoUrl: string | null;
   };
   template: string;
   assetImageData?: string | null;
