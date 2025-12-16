@@ -19,6 +19,7 @@ interface RenderSlideRequest {
     color_primary: string;
     color_secondary: string;
     font_family: string;
+    logoUrl: string | null;
   };
   template: string;
   asset_url?: string | null;
