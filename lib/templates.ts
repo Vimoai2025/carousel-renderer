@@ -146,6 +146,17 @@ export function generateSlideJSX(props: SlideProps): SatoriNode {
     });
   }
   
+  // Brand logo (cta slide only)
+  if (props.slide_type === 'cta' && props.brand.logoUrl) {
+    contentChildren.push({
+      type: 'img',
+      props: {
+        src: props.brand.logoUrl,
+        style: styles.brandLogo,
+      }
+    });
+  }
+  
   // Content wrapper
   children.push({
     type: 'div',
@@ -179,6 +190,7 @@ interface StyleSet {
   slideNumber: React.CSSProperties;
   swipeIndicator: React.CSSProperties;
   ctaArrow: React.CSSProperties;
+  brandLogo: React.CSSProperties;
 }
 
 function getTemplateStyles(template: string, brand: { color_primary: string; color_secondary: string; font_family: string }): StyleSet {
@@ -280,6 +292,13 @@ function getTemplateStyles(template: string, brand: { color_primary: string; col
     ctaArrow: {
       fontSize: '80px',
       marginTop: '30px',
+    },
+    brandLogo: {
+      width: '140px',
+      height: '140px',
+      objectFit: 'contain',
+      marginTop: '40px',
+      opacity: 0.95,
     },
   };
 
